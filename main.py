@@ -1,5 +1,5 @@
 import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
 from pymongo import MongoClient
 from telegram import Update
 
@@ -17,6 +17,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 token = "6258989185:AAEzPzeOPue371Qbbsz15MHSDTlSfuM0WUI"
 freshner_list = ["Bonanza", "Lemon", "Grapes", "Mint"]
+ADDRESS, PHONE = range(2)
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -24,35 +25,61 @@ freshner_list = ["Bonanza", "Lemon", "Grapes", "Mint"]
 
 def start(update, context):
     update.message.reply_text('Hi!')
+    return ADDRESS
 
 
-def help(update, context):
-    update.message.reply_text('''
-        /profile - Profile of our business.
-/freshners - list of room freshners.     
-       ''')
+# def help(update, context):
+#     update.message.reply_text('''
+#         /profile - Profile of our business.
+# /freshners - list of room freshners.
+#        ''')
 
 
-def freshners(update, context):
-    update.message.reply_text('''
-        1. Bonanza
-2. Lemon
-3. Grapes    
-    ''')
+# def freshners(update, context):
+#     update.message.reply_text('''
+#         1. Bonanza
+# 2. Lemon
+# 3. Grapes
+#     ''')
 
 
-def order(update: Update, context):
-    update.message.reply_text('''Please give order with name and its quantity.
-Name of room freshner - Quantity
-Address
-Phone Numbner
+# def order(update: Update, context):
+#     user_id = update.message.from_user.id
+#     context.user_data[user_id] = {}
+#     context.user_data[user_id]['order_list'] = None
 
-Start your order with below line
-"Order Placement"
-    ''')
+#     update.message.reply_text('''Please give order with name and its quantity.
+# Name of room freshner - Quantity
+# Address
+# Phone Numbner
+
+# Start your order with below line
+# "Order Placement"
+#     ''')
+
+
+def set_address(update, context):
+    address = update.message.text
+    context.user_data['address'] = address
+    update.message.reply_text("Address set as: " + address)
+    return PHONE
+
+
+def set_phone(update, context):
+    update.message.reply_text("Please enter your phone number: ")
+    phone = update.message.text
+    context.user_data['phone'] = phone
+    update.message.reply_text("PHone set as: " + phone)
+    return ConversationHandler.END
+
+
+def cancel(update, context):
+    update.message.reply_text('Command canceled.')
+    return ConversationHandler.END
 
 
 def echo(update, context):
+    user_id = update.message.from_user.id
     user_name = update.message.from_user.first_name
     user_input = update.message.text
 
@@ -60,20 +87,34 @@ def echo(update, context):
         update.message.reply_text(
             f"I am fine {user_name}. How can I help you?")
 
-    elif ("hi" or "hii" or "hello") in user_input.lower():
+    elif any(word in user_input.lower() for word in ["hi", "hii", "hello"]):
         update.message.reply_text(
             f"Hii {user_name}. Welcome to Royale Freshners Bot.")
 
-    elif ("order placement") in user_input.lower():
-        order_list = user_input
+    elif "order placement" in user_input.lower():
+        context.user_data[user_id]['order_list'] = user_input
+        update.message.reply_text("Give your address")
+
+    elif "address" in user_input.lower():
+        context.user_data[user_id]['address'] = user_input
+        update.message.reply_text("Give your phone number")
+
+    elif context.user_data[user_id]['order_list'] is not None and 'address' in context.user_data[user_id] and 'phone_number' not in context.user_data[user_id]:
+        context.user_data[user_id]['phone_number'] = user_input
+
         record = {
             "title": user_name,
-            "description": order_list,
-            # "address:":,
-            "viewers": 104
+            "description": context.user_data[user_id]['order_list'],
+            "address": context.user_data[user_id]['address'],
+            "phone_number": context.user_data[user_id]['phone_number']
         }
-        myDatabase.royale.insert_one(record)
-        update.message.reply_text("Give Your address")
+        mycollection.insert_one(record)
+
+        update.message.reply_text(
+            "Thanks for placing your order. We will contact you soon.")
+
+        # Clear user data
+        context.user_data[user_id] = {}
 
 
 def error(update, context):
@@ -90,19 +131,20 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('address', start)],
+        states={
+            ADDRESS: [MessageHandler(Filters.text, set_address)],
+            PHONE: [MessageHandler(Filters.text, set_phone)]
+        },
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    # Add handlers
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("freshners", freshners))
-    dp.add_handler(CommandHandler("order", order))
+    dp.add_handler(conv_handler)
 
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text, echo))
-
-    # log all errors
-    dp.add_error_handler(error)
-
-    # Start the Bot
+    # start the bot
     updater.start_polling()
     updater.idle()
 
