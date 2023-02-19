@@ -23,11 +23,6 @@ ADDRESS, PHONE = range(2)
 # context. Error handlers also receive the raised TelegramError object in error.
 
 
-def start(update, context):
-    update.message.reply_text('Hi!')
-    return ADDRESS
-
-
 # def help(update, context):
 #     update.message.reply_text('''
 #         /profile - Profile of our business.
@@ -58,63 +53,40 @@ def start(update, context):
 #     ''')
 
 
+def start(update, context):
+    update.message.reply_text('Hi! Give your address')
+    return ADDRESS
+
+
 def set_address(update, context):
+    # global address
+    user_name = update.message.from_user.first_name
     address = update.message.text
     context.user_data['address'] = address
+    context.user_data['user_name'] = user_name
     update.message.reply_text("Address set as: " + address)
+    update.message.reply_text("Please enter your phone number: ")
     return PHONE
 
 
 def set_phone(update, context):
-    update.message.reply_text("Please enter your phone number: ")
+    global phone
     phone = update.message.text
     context.user_data['phone'] = phone
-    update.message.reply_text("PHone set as: " + phone)
+    #? Storing 'address' and 'phone' in Database 
+    user_data = {
+        "user_name": context.user_data.get('user_name'),
+        "address": context.user_data.get('address'),
+        "phone": phone
+    }
+    update.message.reply_text("Phone set as: " + phone)
+    mycollection.insert_one(user_data)
     return ConversationHandler.END
 
 
 def cancel(update, context):
     update.message.reply_text('Command canceled.')
     return ConversationHandler.END
-
-
-def echo(update, context):
-    user_id = update.message.from_user.id
-    user_name = update.message.from_user.first_name
-    user_input = update.message.text
-
-    if "how are you" in user_input.lower():
-        update.message.reply_text(
-            f"I am fine {user_name}. How can I help you?")
-
-    elif any(word in user_input.lower() for word in ["hi", "hii", "hello"]):
-        update.message.reply_text(
-            f"Hii {user_name}. Welcome to Royale Freshners Bot.")
-
-    elif "order placement" in user_input.lower():
-        context.user_data[user_id]['order_list'] = user_input
-        update.message.reply_text("Give your address")
-
-    elif "address" in user_input.lower():
-        context.user_data[user_id]['address'] = user_input
-        update.message.reply_text("Give your phone number")
-
-    elif context.user_data[user_id]['order_list'] is not None and 'address' in context.user_data[user_id] and 'phone_number' not in context.user_data[user_id]:
-        context.user_data[user_id]['phone_number'] = user_input
-
-        record = {
-            "title": user_name,
-            "description": context.user_data[user_id]['order_list'],
-            "address": context.user_data[user_id]['address'],
-            "phone_number": context.user_data[user_id]['phone_number']
-        }
-        mycollection.insert_one(record)
-
-        update.message.reply_text(
-            "Thanks for placing your order. We will contact you soon.")
-
-        # Clear user data
-        context.user_data[user_id] = {}
 
 
 def error(update, context):
@@ -130,9 +102,10 @@ def main():
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+    # updater.dispatcher.add_handler(MessageHandler(Filters.text, echo))
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('address', start)],
+        entry_points=[CommandHandler('start', start)],
         states={
             ADDRESS: [MessageHandler(Filters.text, set_address)],
             PHONE: [MessageHandler(Filters.text, set_phone)]
@@ -140,8 +113,6 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel)]
     )
 
-    # Add handlers
-    dp.add_handler(CommandHandler("start", start))
     dp.add_handler(conv_handler)
 
     # start the bot
