@@ -19,18 +19,18 @@ Telegram account
 
 ### Installation
  1. Clone the repository:
-   - `git clone https://github.com/trishantjain/telegram_bot.git`
+    - `git clone https://github.com/trishantjain/telegram_bot.git`
      
  2. Navigate to the project directory:
-   - `cd telegram_bot`
+    - `cd telegram_bot`
      
  3. Install the dependencies:
-   = `pip install -r requirements.txt`
+    - `pip install -r requirements.txt`
 
 ## Usage
 
 1. Run the bot:
-   - `python bot.py`
+    - `python bot.py`
 
 ## Contributing
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
