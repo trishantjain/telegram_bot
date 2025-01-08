@@ -1,23 +1,23 @@
-#Telegram Bot
+# Telegram Bot
 This repository contains a Telegram bot written in Python.
 
-##Project Motive
+## Project Motive
 The primary goal of this project is to create a versatile and efficient Telegram bot that can automate tasks, provide information, and interact with users seamlessly. The bot is designed to be easily customizable and extendable, allowing users to add new features and functionalities as needed.
 
-##Features
+## Features
 Python-based: The bot is implemented using Python.
 Automated Tasks: Perform various automated tasks without manual intervention.
 Information Provider: Fetch and provide information to users on demand.
 User Interaction: Engage with users through interactive commands and messages.
 Open Source: Contributions are welcome to improve the project.
 
-##Getting Started
+## Getting Started
 
-###Prerequisites
+### Prerequisites
 Python 3.6 or above
 Telegram account
 
-###Installation
+### Installation
  1. Clone the repository:
    - `git clone https://github.com/trishantjain/telegram_bot.git`
      
@@ -27,12 +27,12 @@ Telegram account
  3. Install the dependencies:
    = `pip install -r requirements.txt`
 
-##Usage
+## Usage
 
 1. Run the bot:
    - `python bot.py`
 
-##Contributing
+## Contributing
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are greatly appreciated.
 
 1. Fork the Project
